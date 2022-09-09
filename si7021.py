@@ -59,17 +59,29 @@ class Si7021(object):
 
     def reset(self):
         'Reset the sensor.'
+        
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto(self.address, self.SI7021_RESET_CMD)
+        self.i2c.unlock()
         sleep(self.I2C_WAIT_TIME)
 
 
     def _get_data(self, command):
         'Retrieve data from the sensor and verify it with a CRC check.'
         data = bytearray(3)
+        
+        while not self.i2c.try_lock():
+            pass
         self.i2c.writeto(self.address, command)
+        self.i2c.unlock()
         sleep(self.I2C_WAIT_TIME)
 
+        while not self.i2c.try_lock():
+            pass
         self.i2c.readfrom_into(self.address, data)
+        self.i2c.unlock()        
+        
         value = self._convert_to_integer(data[:2])
 
         verified = self._verify_checksum(data)
@@ -85,18 +97,30 @@ class Si7021(object):
         part of the bytes returned for the serial number.
 
         '''
+        while not self.i2c.try_lock():
+            pass
+
         # Serial 1st half
         self.i2c.writeto(self.address, self.SI7021_ID1_CMD)
+        self.i2c.unlock()
         id1 = bytearray(8)
         sleep(self.I2C_WAIT_TIME)
+        
+        while not self.i2c.try_lock():
+            pass
         self.i2c.readfrom_into(self.address, id1)
 
         # Serial 2nd half
         self.i2c.writeto(self.address, self.SI7021_ID2_CMD)
+        self.i2c.unlock()
         id2 = bytearray(6)
         sleep(self.I2C_WAIT_TIME)
+        
+        while not self.i2c.try_lock():
+            pass
         self.i2c.readfrom_into(self.address, id2)
-
+        self.i2c.unlock()
+        
         combined_id = bytearray([id1[0], id1[2], id1[4], id1[6],
                                  id2[0], id2[1], id2[3], id2[4]])
 
